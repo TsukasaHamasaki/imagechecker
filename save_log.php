@@ -1,0 +1,1 @@
+<?php $data=$_POST["data"]??"";file_put_contents("logs.csv",$data."\n",FILE_APPEND);echo"保存完了"; ?>

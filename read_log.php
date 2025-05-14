@@ -1,0 +1,1 @@
+<?php echo file_exists("logs.csv")?file_get_contents("logs.csv"):""; ?>

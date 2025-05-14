@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>楽天画像判定ツール</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 2em;
+      max-width: 1000px;
+      margin: auto;
+      background: #fff8f8;
+      text-align: center;
+    }
+    header img {
+      width: 100%;
+      max-width: 500px;
+      display: block;
+      margin: 0 auto 2em auto;
+    }
+    h2.description {
+      position: relative;
+      padding: 1rem .5rem;
+      display: inline-block;
+      font-size: 1.2em;
+    }
+    h2.description:after {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 5px;
+      content: '';
+      background-image: linear-gradient(to right, #fa709a 0%, #fee140 100%);
+    }
+
+    .stroke {
+      display: inline-block;
+      padding: 0.8em 2em;
+      margin: 2em auto;
+      font-size: 1.1em;
+      font-weight: bold;
+      color: #000;
+      background: #f0f0f0;
+      text-decoration: none;
+      position: relative;
+      z-index: 1;
+      transition: box-shadow 0.3s ease;
+    }
+    .stroke:hover {
+      animation: ripple 1.5s infinite;
+      color: #000;
+    }
+
+    .stroke .border {
+      content: "";
+      position: absolute;
+      opacity: 0;
+      z-index: -1;
+    }
+    .stroke .border.top,
+    .stroke .border.bottom {
+      width: calc(100% - 20px);
+    }
+    .stroke .border.top {
+      border-top: 3px solid #BF0000;
+      right: 0;
+      top: 0;
+    }
+    .stroke .border.bottom {
+      border-bottom: 3px solid #BF0000;
+      left: 0;
+      bottom: 0;
+    }
+    .stroke .border.right,
+    .stroke .border.left {
+      height: calc(100% - 20px);
+    }
+    .stroke .border.right {
+      border-right: 3px solid #BF0000;
+      right: 0;
+      top: 0;
+    }
+    .stroke .border.left {
+      border-left: 3px solid #BF0000;
+      left: 0;
+      bottom: 0;
+    }
+    .stroke.is-animated .border {
+      opacity: 1;
+    }
+    .stroke.is-animated .border.top,
+    .stroke.is-animated .border.bottom {
+      animation: stroke-width 1.2s ease;
+    }
+    .stroke.is-animated .border.right,
+    .stroke.is-animated .border.left {
+      animation: stroke-height 1.2s ease;
+    }
+    @keyframes stroke-width {
+      0% { width: 0; opacity: 1; }
+      100% { width: calc(100% - 20px); opacity: 1; }
+    }
+    @keyframes stroke-height {
+      0% { height: 0; opacity: 1; }
+      100% { height: calc(100% - 20px); opacity: 1; }
+    }
+
+    @keyframes ripple {
+      0% { box-shadow: 0 0 0 0 #BF0000; }
+      70% { box-shadow: 0 0 0 10px rgba(191,0,0,0); }
+      100% { box-shadow: 0 0 0 0 rgba(191,0,0,0); }
+    }
+
+    .input-group {
+      display: flex;
+      align-items: center;
+      margin-bottom: 0.5em;
+      justify-content: center;
+    }
+    .input-box {
+      flex-grow: 1;
+      padding: 0.5em;
+      font-size: 1em;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      max-width: 600px;
+    }
+    .input-box:focus {
+      box-shadow: 0 0 5px #FF2626;
+      border: 1px solid #FF2626;
+      outline: none;
+    }
+    .input-label {
+      margin-right: 0.5em;
+      font-weight: bold;
+      color: #c00;
+      width: 2em;
+      text-align: right;
+      font-size: 1.2em;
+    }
+    .remove-btn {
+      margin-left: 0.5em;
+      background: #ff5555;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      padding: 0.3em 0.6em;
+      cursor: pointer;
+      font-size: 0.9em;
+    }
+    .sample_btn {
+      display: inline-block;
+      width: 250px;
+      text-align: center;
+      text-decoration: none;
+      line-height: 60px;
+      color: #fff;
+      background-color: #BF0000;
+      border-radius: 8px;
+      margin-top: 1em;
+    }
+    .sample_btn:hover {
+      animation: ripple 1.5s infinite;
+      color: #fff;
+    }
+    #addInputBtn {
+      background-color: #FF7777;
+      margin-left: 0.5em;
+      margin-top: 1em;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      padding: 0.6em 1.2em;
+      cursor: pointer;
+    }
+    #logSection {
+      margin-top: 2em;
+    }
+    .log-wrapper {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.5s ease;
+    }
+    .log-wrapper.open {
+      max-height: 1000px;
+    }
+    #logTable {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1em;
+    }
+    #logTable th, #logTable td {
+      border: 1px solid #ccc;
+      padding: 0.5em;
+    }
+    .open-btn {
+      background: #00aa00;
+      color: white;
+      border: none;
+      padding: 0.3em 0.6em;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <header><img src="head.png" alt="head"></header>
+  <h2 class="description">🔻 画像URLを入力してください（R-cabinetの画像リンク）</h2>
+
+  <a href="https://cabinet.rms.rakuten.co.jp/" class="stroke is-animated" target="_blank">
+    R-cabinetへ移動
+    <div class="border top"></div>
+    <div class="border right"></div>
+    <div class="border bottom"></div>
+    <div class="border left"></div>
+  </a>
+
+  <div id="inputsContainer"></div>
+  <div class="note">※ 楽天にログイン済みでないと判定ページは表示されません。</div>
+  <button id="addInputBtn" type="button">＋ 入力欄を追加</button>
+  <br>
+  <a id="submitBtn" class="sample_btn" href="#">画像判定ページを一括で開く</a>
+
+  <div id="logSection">
+    <button id="toggleLogBtn" class="sample_btn" type="button" style="margin-top:2em;">▼ 判定履歴を表示</button>
+    <div id="logWrapper" class="log-wrapper">
+      <table id="logTable">
+        <thead><tr><th>日時</th><th>画像URL</th><th>操作</th></tr></thead>
+        <tbody><tr><td colspan="3">読み込み中...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    const container = document.getElementById("inputsContainer");
+    const addInputBtn = document.getElementById("addInputBtn");
+    const submitBtn = document.getElementById("submitBtn");
+    const toggleBtn = document.getElementById("toggleLogBtn");
+    const logWrapper = document.getElementById("logWrapper");
+
+    function getCircledNumber(num) {
+      return String.fromCharCode(9311 + num);
+    }
+
+    function createInput(index, value = "") {
+      const group = document.createElement("div");
+      group.className = "input-group";
+
+      const label = document.createElement("div");
+      label.className = "input-label";
+      label.textContent = getCircledNumber(index + 1);
+
+      const input = document.createElement("input");
+      input.type = "text";
+      input.className = "input-box";
+      input.placeholder = "https://image.rakuten.co.jp/...";
+      input.value = value;
+
+      const remove = document.createElement("button");
+      remove.className = "remove-btn";
+      remove.textContent = "×";
+      remove.onclick = () => {
+        container.removeChild(group);
+        updateLabels();
+      };
+
+      group.appendChild(label);
+      group.appendChild(input);
+      group.appendChild(remove);
+      container.appendChild(group);
+    }
+
+    function updateLabels() {
+      const groups = container.querySelectorAll(".input-group");
+      groups.forEach((g, i) => {
+        g.querySelector(".input-label").textContent = getCircledNumber(i + 1);
+      });
+    }
+
+    addInputBtn.addEventListener("click", () => {
+      createInput(container.querySelectorAll(".input-group").length);
+    });
+
+    submitBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      const urls = Array.from(document.querySelectorAll(".input-box"))
+        .map(input => input.value.trim())
+        .filter(value => value.startsWith("http"));
+
+      if (!urls.length) return alert("画像URLを1つ以上入力してください。");
+
+      urls.forEach(url => {
+        window.open(`https://cabinet.rms.rakuten.co.jp/image_check/?imgurl=${encodeURIComponent(url)}`, "_blank");
+      });
+
+      const logData = urls.map(url => `${new Date().toISOString()},${url}`).join("\n");
+      fetch("save_log.php", {
+        method: "POST",
+        headers: {"Content-Type": "application/x-www-form-urlencoded"},
+        body: "data=" + encodeURIComponent(logData)
+      }).then(loadLog);
+    });
+
+    toggleBtn.addEventListener("click", () => {
+      logWrapper.classList.toggle("open");
+      toggleBtn.textContent = logWrapper.classList.contains("open") ? "▲ 判定履歴を非表示" : "▼ 判定履歴を表示";
+    });
+
+    function loadLog() {
+      fetch("read_log.php").then(res => res.text()).then(text => {
+        const lines = text.trim().split("\n").reverse();
+        const tbody = document.querySelector("#logTable tbody");
+        tbody.innerHTML = "";
+        if (!lines.length || !lines[0]) {
+          tbody.innerHTML = "<tr><td colspan='3'>(履歴がありません)</td></tr>";
+          return;
+        }
+        lines.forEach(line => {
+          const [date, url] = line.split(",", 2);
+          const row = document.createElement("tr");
+          row.innerHTML = `<td>${date}</td><td><a href="${url}" target="_blank">${url}</a></td>
+          <td><button class="open-btn" onclick="window.open('https://cabinet.rms.rakuten.co.jp/image_check/?imgurl=${encodeURIComponent(url)}','_blank')">判定</button></td>`;
+          tbody.appendChild(row);
+        });
+      });
+    }
+
+    window.addEventListener("DOMContentLoaded", () => {
+      loadLog();
+      createInput(0);
+    });
+  </script>
+</body>
+</html>
