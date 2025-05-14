@@ -1,8 +1,7 @@
-
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>楽天画像判定ツール</title>
   <style>
     body {
@@ -34,6 +33,7 @@
       content: '';
       background-image: linear-gradient(to right, #fa709a 0%, #fee140 100%);
     }
+
     .stroke {
       display: inline-block;
       padding: 0.8em 2em;
@@ -51,6 +51,7 @@
       animation: ripple 1.5s infinite;
       color: #000;
     }
+
     .stroke .border {
       content: "";
       position: absolute;
@@ -104,11 +105,13 @@
       0% { height: 0; opacity: 1; }
       100% { height: calc(100% - 20px); opacity: 1; }
     }
+
     @keyframes ripple {
       0% { box-shadow: 0 0 0 0 #BF0000; }
       70% { box-shadow: 0 0 0 10px rgba(191,0,0,0); }
       100% { box-shadow: 0 0 0 0 rgba(191,0,0,0); }
     }
+
     .input-group {
       display: flex;
       align-items: center;
@@ -203,6 +206,7 @@
 <body>
   <header><img src="head.png" alt="head"></header>
   <h2 class="description">🔻 画像URLを入力してください（R-cabinetの画像リンク）</h2>
+
   <a href="https://cabinet.rms.rakuten.co.jp/" class="stroke is-animated" target="_blank">
     R-cabinetへ移動
     <div class="border top"></div>
@@ -210,11 +214,13 @@
     <div class="border bottom"></div>
     <div class="border left"></div>
   </a>
+
   <div id="inputsContainer"></div>
   <div class="note">※ 楽天にログイン済みでないと判定ページは表示されません。</div>
   <button id="addInputBtn" type="button">＋ 入力欄を追加</button>
   <br>
   <a id="submitBtn" class="sample_btn" href="#">画像判定ページを一括で開く</a>
+
   <div id="logSection">
     <button id="toggleLogBtn" class="sample_btn" type="button" style="margin-top:2em;">▼ 判定履歴を表示</button>
     <div id="logWrapper" class="log-wrapper">
@@ -224,27 +230,32 @@
       </table>
     </div>
   </div>
+
   <script>
-    const GAS_ENDPOINT = "https://script.google.com/macros/s/AKfycbxeafRmliixK_sjZhbooOSLRpkLKhXSbR1RfzD3zvSBJJuT-H1Zfvr_0KHVkVg1wJ-A/exec";
     const container = document.getElementById("inputsContainer");
     const addInputBtn = document.getElementById("addInputBtn");
     const submitBtn = document.getElementById("submitBtn");
     const toggleBtn = document.getElementById("toggleLogBtn");
     const logWrapper = document.getElementById("logWrapper");
+
     function getCircledNumber(num) {
       return String.fromCharCode(9311 + num);
     }
+
     function createInput(index, value = "") {
       const group = document.createElement("div");
       group.className = "input-group";
+
       const label = document.createElement("div");
       label.className = "input-label";
       label.textContent = getCircledNumber(index + 1);
+
       const input = document.createElement("input");
       input.type = "text";
       input.className = "input-box";
       input.placeholder = "https://image.rakuten.co.jp/...";
       input.value = value;
+
       const remove = document.createElement("button");
       remove.className = "remove-btn";
       remove.textContent = "×";
@@ -252,42 +263,51 @@
         container.removeChild(group);
         updateLabels();
       };
+
       group.appendChild(label);
       group.appendChild(input);
       group.appendChild(remove);
       container.appendChild(group);
     }
+
     function updateLabels() {
       const groups = container.querySelectorAll(".input-group");
       groups.forEach((g, i) => {
         g.querySelector(".input-label").textContent = getCircledNumber(i + 1);
       });
     }
+
     addInputBtn.addEventListener("click", () => {
       createInput(container.querySelectorAll(".input-group").length);
     });
+
     submitBtn.addEventListener("click", (e) => {
       e.preventDefault();
       const urls = Array.from(document.querySelectorAll(".input-box"))
         .map(input => input.value.trim())
         .filter(value => value.startsWith("http"));
+
       if (!urls.length) return alert("画像URLを1つ以上入力してください。");
+
       urls.forEach(url => {
         window.open(`https://cabinet.rms.rakuten.co.jp/image_check/?imgurl=${encodeURIComponent(url)}`, "_blank");
       });
+
       const logData = urls.map(url => `${new Date().toISOString()},${url}`).join("\n");
-      fetch(GAS_ENDPOINT, {
+      fetch("save_log.php", {
         method: "POST",
         headers: {"Content-Type": "application/x-www-form-urlencoded"},
         body: "data=" + encodeURIComponent(logData)
       }).then(loadLog);
     });
+
     toggleBtn.addEventListener("click", () => {
       logWrapper.classList.toggle("open");
       toggleBtn.textContent = logWrapper.classList.contains("open") ? "▲ 判定履歴を非表示" : "▼ 判定履歴を表示";
     });
+
     function loadLog() {
-      fetch(GAS_ENDPOINT).then(res => res.text()).then(text => {
+      fetch("read_log.php").then(res => res.text()).then(text => {
         const lines = text.trim().split("\n").reverse();
         const tbody = document.querySelector("#logTable tbody");
         tbody.innerHTML = "";
@@ -304,6 +324,7 @@
         });
       });
     }
+
     window.addEventListener("DOMContentLoaded", () => {
       loadLog();
       createInput(0);
